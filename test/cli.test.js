@@ -321,3 +321,26 @@ test('help and version', async () => {
     assert.equal(r.calls.length, 0);
   }
 });
+
+// --- untrusted API text --------------------------------------------------------------------------------------------
+
+test('terminal escapes and bidi overrides in API text never reach the terminal', async () => {
+  const evil = '\x1b]8;;https://evil.test\x07Pay here\x1b]8;;\x07 \x1b[2J\u009b31m ‮gnp.exe';
+  const handler = () => json({ as_of: 'T0', results: [row(1, { title: evil, agency: evil })], has_more: true, next_cursor: `c\x1b[0m` });
+  const text = await run(['search', 'contracts'], handler);
+  assert.equal(text.code, 0);
+  assert.doesNotMatch(text.out, /[\x1b\x07\u009b‮]/);
+  assert.match(text.out, /Pay here/);
+
+  const rec = await run(['get', '1'], () => json({ as_of: 'T0', result: row(1, { description: evil, contacts: [{ name: evil }] }) }));
+  assert.doesNotMatch(rec.out, /[\x1b\x07\u009b‮]/);
+
+  const bad = await run(['get', '1'], () => new Response(`boom ${evil}`, { status: 418 }));
+  assert.equal(bad.code, 1);
+  assert.doesNotMatch(bad.err, /[\x1b\x07\u009b‮]/);
+
+  // --json keeps the data but escapes it, and stays parseable.
+  const j = await run(['search', 'contracts', '--json'], handler);
+  assert.doesNotMatch(j.out, /[\x1b\x07\u009b]/);
+  assert.equal(JSON.parse(j.out).results[0].title, evil);
+});

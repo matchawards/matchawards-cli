@@ -187,6 +187,9 @@ function commandHelp(cmd) {
 
 // --- text output ---------------------------------------------------------------------------------------------
 
+/** C0 controls except tab and newline, DEL, C1 controls, and the bidi embedding/override/isolate characters. */
+const UNSAFE_TEXT = /[\x00-\x08\x0b-\x1f\x7f-\x9f‪-‮⁦-⁩]/g;
+
 const fit = (s, w) => {
   s = String(s ?? '');
   return (s.length > w ? s.slice(0, w - 1) + '…' : s).padEnd(w);
@@ -245,8 +248,10 @@ export async function main(
   argv,
   { fetch = globalThis.fetch, env = process.env, stdout = process.stdout, stderr = process.stderr } = {},
 ) {
-  const out = (s) => stdout.write(s);
-  const err = (s) => stderr.write(s.endsWith('\n') ? s : s + '\n');
+  // API text (titles, descriptions, error bodies, the cursor) is untrusted: drop terminal control characters and
+  // bidi overrides from everything printed, so a record cannot inject escape sequences or spoof a url.
+  const out = (s) => stdout.write(s.replace(UNSAFE_TEXT, ''));
+  const err = (s) => stderr.write((s.endsWith('\n') ? s : s + '\n').replace(UNSAFE_TEXT, ''));
   const [first, second] = argv;
   if (first === '--version') return out(`${VERSION}\n`), 0;
   if (first === undefined || first === '-h' || first === '--help') return out(MAIN_HELP), 0;
@@ -282,7 +287,9 @@ export async function main(
     }
     const result = await cmd.run(values, positionals, { fetch, base: apiBase(env) });
     if (values.json) {
-      out(JSON.stringify(result, null, 2) + '\n');
+      // JSON.stringify escapes C0 controls but not DEL or C1 (U+009B is a one-byte CSI); escape those too, so the
+      // data stays intact and valid JSON. Written directly: out() would strip them instead.
+      stdout.write(JSON.stringify(result, null, 2).replace(/[\x7f-\x9f]/g, (c) => `\\u00${c.charCodeAt(0).toString(16)}`) + '\n');
     } else if (words[0] === 'get') {
       out(record(result));
     } else if (words[0] === 'contacts') {
