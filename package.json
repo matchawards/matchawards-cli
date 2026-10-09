@@ -27,6 +27,10 @@
     "cli"
   ],
   "license": "MIT",
+  "author": {
+    "name": "MatchAwards",
+    "email": "cmo@ait.com"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/matchawards/matchawards-cli.git"
