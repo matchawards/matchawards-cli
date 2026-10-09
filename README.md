@@ -64,12 +64,12 @@ The data is US federal and state contract opportunities, grants and jobs from
 [matchawards.com](https://matchawards.com). Only public posts are returned, and each result links back to its page
 on matchawards.com.
 
-## License
-
-MIT
-
 ## Releasing
 
 Published from GitHub Actions with npm provenance, never from a laptop: bump `version` in `package.json`, commit,
 then `git tag <version> && git push --tags`. `.github/workflows/publish.yml` checks the tag against the version,
 runs the tests and publishes. npm auth is Trusted Publishing (OIDC), so no npm token is stored anywhere.
+
+## License
+
+MIT
