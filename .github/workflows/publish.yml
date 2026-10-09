@@ -1,0 +1,29 @@
+# Publishes to npm with a provenance statement on every version tag (e.g. 0.1.1).
+# Auth is npm Trusted Publishing (OIDC): on npmjs.com, the package's Settings ->
+# Trusted Publisher -> GitHub Actions, this repository, workflow publish.yml.
+# No npm token exists anywhere. Trusted Publishing needs npm >= 11.5.1 (Node 24 ships it).
+#
+# Release: bump the version in package.json, commit, `git tag <version>`, push the tag.
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC token for Trusted Publishing and the provenance attestation
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Tag matches package.json version
+        run: test "$GITHUB_REF_NAME" = "$(node -p "require('./package.json').version")"
+      - run: npm publish --provenance --access public # prepublishOnly runs the tests

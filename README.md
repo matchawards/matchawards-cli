@@ -67,3 +67,9 @@ on matchawards.com.
 ## License
 
 MIT
+
+## Releasing
+
+Published from GitHub Actions with npm provenance, never from a laptop: bump `version` in `package.json`, commit,
+then `git tag <version> && git push --tags`. `.github/workflows/publish.yml` checks the tag against the version,
+runs the tests and publishes. npm auth is Trusted Publishing (OIDC), so no npm token is stored anywhere.
