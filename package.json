@@ -27,6 +27,9 @@
     "cli"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": {
     "name": "MatchAwards",
     "email": "cmo@ait.com"
