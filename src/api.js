@@ -45,7 +45,12 @@ export function errorMessage(r, text) {
 
 /** GET one API path; every failure becomes an ApiError. opts: {fetch, base}. */
 export async function get(path, params = {}, { fetch = globalThis.fetch, base = apiBase() } = {}) {
-  const url = new URL(base + path);
+  let url;
+  try {
+    url = new URL(base + path);
+  } catch {
+    throw new ApiError(`MATCHAWARDS_API_BASE is not a valid URL (${base}). Unset it to use https://matchawards.com.`);
+  }
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v)); // "" = unset
   }

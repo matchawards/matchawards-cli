@@ -261,6 +261,24 @@ test('timeout and network failures use the MCP wording', async () => {
   assert.equal(down.err, `Could not reach MatchAwards at ${BASE} (ECONNREFUSED). Check the network and retry later.\n`);
 });
 
+test('a bad MATCHAWARDS_API_BASE and unexpected errors exit 1 with one clean line', async () => {
+  let called = false;
+  const io = () => {
+    const r = { out: '', err: '' };
+    return [r, { write: (s) => (r.out += s) }, { write: (s) => (r.err += s) }];
+  };
+  const [bad, stdout, stderr] = io();
+  const code = await main(['search', 'jobs'], { fetch: async () => (called = true), env: { MATCHAWARDS_API_BASE: 'not a url' }, stdout, stderr });
+  assert.equal(code, 1);
+  assert.equal(bad.err, 'MATCHAWARDS_API_BASE is not a valid URL (not a url). Unset it to use https://matchawards.com.\n');
+  assert.equal(called, false);
+  // A response without headers makes the 429 branch throw a TypeError: a bug path, still exit 1 and one line.
+  const odd = await run(['get', 'abc'], () => ({ status: 429, text: async () => '{}' }));
+  assert.equal(odd.code, 1);
+  assert.match(odd.err, /^matchawards get: unexpected error: .+\n$/);
+  assert.equal(odd.err.split('\n').length, 2);
+});
+
 // --- ids, headers, output ------------------------------------------------------------------------------------
 
 test('a 19-digit id round-trips unchanged as a string', async () => {

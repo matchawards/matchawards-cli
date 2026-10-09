@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "test": "node --test",
+    "prepublishOnly": "npm test",
     "smoke": "node scripts/smoke.js"
   },
   "engines": {

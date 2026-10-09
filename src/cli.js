@@ -309,6 +309,7 @@ export async function main(
       err(e.message);
       return 1;
     }
-    throw e;
+    err(`${name}: unexpected error: ${e?.message ?? e}`); // a bug, not a usage error: still one line, exit 1
+    return 1;
   }
 }
